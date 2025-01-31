@@ -123,9 +123,9 @@ def mostrar_grafico():
             ax.xaxis.set_major_locator(mdates.MonthLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))  
             
-            today = datetime.today()
-            if today.year == selected_year:
-                ax.axvline(today, color='red', linestyle='--', linewidth=2)
+            #today = datetime.today()
+            #if today.year == selected_year:
+            #    ax.axvline(today, color='red', linestyle='--', linewidth=2)
         
         ax.grid(False)  
         
