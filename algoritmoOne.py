@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime
 from streamlit_option_menu import option_menu
+import locale
+import io  # Para la descarga del gráfico
+
+# Configurar la localización en español para los meses
+#locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
 
 # Variable de fecha de actualización
 FECHA_ACTUALIZACION = "2025-01-31"
@@ -57,10 +62,10 @@ def mostrar_grafico():
     if df is not None:
         years = sorted(set(df['Year Start'].dropna().astype(int)).union(set(df['Year Finish'].dropna().astype(int))))
         if 2025 not in years:
-            years.append(2025)
+            years.append(2025)  
         years = ['Todos'] + sorted(set(years))
 
-        selected_year = st.selectbox("📅 Seleccione un año", years, index=0)
+        selected_year = st.sidebar.selectbox("📅 Seleccione un año", years, index=0)
 
         df_filtered = df[df['Outline Level'] == 1].copy()
         
@@ -68,19 +73,36 @@ def mostrar_grafico():
             df_filtered = df_filtered[(df_filtered['Year Start'] == selected_year) | (df_filtered['Year Finish'] == selected_year)]
         
         df_filtered = df_filtered.sort_values(by='Start', ascending=True)
+
+        selected_task = None
+        if selected_year != 'Todos':
+            task_names = ['Todas'] + df_filtered['Name'].unique().tolist()
+            selected_task = st.sidebar.selectbox("📋 Seleccione una tarea", task_names, index=0)
+
+            if selected_task != "Todas":
+                task_outline_level_1 = df_filtered[df_filtered['Name'] == selected_task]
+                if not task_outline_level_1.empty:
+                    task_start = task_outline_level_1.iloc[0]['Start']
+                    task_finish = task_outline_level_1.iloc[0]['Finish']
+                    
+                    df_filtered = df[
+                        (df['Outline Level'].isin([1, 2])) &
+                        (df['Start'] >= task_start) &
+                        (df['Finish'] <= task_finish)
+                    ]
         
-        st.write("### Línea del tiempo de los registros con Outline Level 1")
+        st.write("### Línea del tiempo de los registros con Outline Level 1 y 2")
         fig, ax = plt.subplots(figsize=(18, 10))
         ax.set_facecolor('white')
-        
+
         df_filtered = df_filtered.reset_index(drop=True)
         y_positions = range(len(df_filtered) - 1, -1, -1)
         
         bars = ax.barh(y_positions, df_filtered['Finish'] - df_filtered['Start'], left=df_filtered['Start'], color='green', height=0.6)
         
         for bar, (_, row) in zip(bars, df_filtered.iterrows()):
-            start_text = row['Start'].strftime('%b %Y') if pd.notnull(row['Start']) else ""
-            finish_text = row['Finish'].strftime('%b %Y') if pd.notnull(row['Finish']) else ""
+            start_text = row['Start'].strftime('%b %Y').capitalize() if pd.notnull(row['Start']) else ""
+            finish_text = row['Finish'].strftime('%b %Y').capitalize() if pd.notnull(row['Finish']) else ""
             bar_center = bar.get_y() + bar.get_height() / 2
             
             ax.text(row['Start'], bar_center, start_text, verticalalignment='center', horizontalalignment='right', fontsize=11, color='black')
@@ -89,7 +111,7 @@ def mostrar_grafico():
         
         ax.set_xlabel("Fecha", fontsize=14, fontweight='bold')
         ax.set_ylabel("", fontsize=14, fontweight='bold')
-        ax.set_title("Línea del tiempo de tareas nivel 1", fontsize=16, fontweight='bold')
+        ax.set_title("Línea del tiempo de tareas nivel 1 y 2", fontsize=16, fontweight='bold')
         ax.set_yticks(y_positions)
         ax.set_yticklabels([])
 
@@ -99,16 +121,28 @@ def mostrar_grafico():
             ax.set_xlim(left=pd.Timestamp(year=2025, month=1, day=1))
         else:
             ax.xaxis.set_major_locator(mdates.MonthLocator())
-            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))  
+            
             today = datetime.today()
             if today.year == selected_year:
                 ax.axvline(today, color='red', linestyle='--', linewidth=2)
         
-        ax.grid(False)
+        ax.grid(False)  
         
         plt.xticks(fontsize=14, fontweight='bold', color='black', rotation=0)
         
         st.pyplot(fig)
+
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight")
+        buffer.seek(0)
+
+        st.download_button(
+            label="📥 Descargar gráfico",
+            data=buffer,
+            file_name="grafico_linea_tiempo.png",
+            mime="image/png"
+        )
 
 def main():
     with st.sidebar:
