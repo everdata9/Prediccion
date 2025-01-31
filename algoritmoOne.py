@@ -4,23 +4,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import datetime
 from streamlit_option_menu import option_menu
-import calendar
 
 # Variable de fecha de actualización
 FECHA_ACTUALIZACION = "2025-01-31"
 
 # Ruta del archivo Excel para uso global
 EXCEL_FILE_PATH = "20241221 Cronograma IT v3 - copia (1).xlsx"
-
-# Función para traducir los meses al español
-def traducir_mes(fecha):
-    if pd.notnull(fecha):
-        meses_es = [
-            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        ]
-        return meses_es[fecha.month - 1] + f" {fecha.year}"
-    return ""
 
 def cargar_datos():
     try:
@@ -71,7 +60,7 @@ def mostrar_grafico():
             years.append(2025)
         years = ['Todos'] + sorted(set(years))
 
-        selected_year = st.sidebar.selectbox("📅 Seleccione un año", years, index=0)
+        selected_year = st.selectbox("📅 Seleccione un año", years, index=0)
 
         df_filtered = df[df['Outline Level'] == 1].copy()
         
@@ -90,8 +79,8 @@ def mostrar_grafico():
         bars = ax.barh(y_positions, df_filtered['Finish'] - df_filtered['Start'], left=df_filtered['Start'], color='green', height=0.6)
         
         for bar, (_, row) in zip(bars, df_filtered.iterrows()):
-            start_text = traducir_mes(row['Start'])
-            finish_text = traducir_mes(row['Finish'])
+            start_text = row['Start'].strftime('%b %Y') if pd.notnull(row['Start']) else ""
+            finish_text = row['Finish'].strftime('%b %Y') if pd.notnull(row['Finish']) else ""
             bar_center = bar.get_y() + bar.get_height() / 2
             
             ax.text(row['Start'], bar_center, start_text, verticalalignment='center', horizontalalignment='right', fontsize=11, color='black')
@@ -103,7 +92,7 @@ def mostrar_grafico():
         ax.set_title("Línea del tiempo de tareas nivel 1", fontsize=16, fontweight='bold')
         ax.set_yticks(y_positions)
         ax.set_yticklabels([])
-        
+
         if selected_year == 'Todos':
             ax.xaxis.set_major_locator(mdates.YearLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
@@ -111,7 +100,6 @@ def mostrar_grafico():
         else:
             ax.xaxis.set_major_locator(mdates.MonthLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
-            
             today = datetime.today()
             if today.year == selected_year:
                 ax.axvline(today, color='red', linestyle='--', linewidth=2)
