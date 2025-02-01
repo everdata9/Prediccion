@@ -8,7 +8,7 @@ import locale
 import io  # Para la descarga del gráfico
 
 # Configurar la localización en español para los meses
-locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
+#locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
 
 # Variable de fecha de actualización
 FECHA_ACTUALIZACION = "2025-01-31"
