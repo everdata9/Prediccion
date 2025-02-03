@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+import matplotlib.dates as mdates
 from streamlit_option_menu import option_menu
 import locale
 import io  # Para la descarga del gráfico
@@ -29,7 +30,6 @@ def cargar_datos():
     except Exception as e:
         st.error(f"Error al cargar el archivo Excel: {e}")
         return None
-
 
 def cargar_recursos():
     try:
@@ -70,7 +70,7 @@ def mostrar_informacion_proyecto():
     st.write(f"🔄 Última actualización: {FECHA_ACTUALIZACION}")
 
 
-def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
+def mostrar_recurso_humano(selected_nombre, selected_year, selected_month): 
     st.title("👥 Recurso Humano del Proyecto")
     st.write(f"🔄 Última actualización: {FECHA_ACTUALIZACION}")
 
@@ -85,18 +85,22 @@ def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
         if selected_nombre != 'Todos':
             df_grouped_ano = df_grouped_ano[df_grouped_ano['Funcionario'] == selected_nombre]
 
+        # Definir paleta de colores consistente
+        unique_names = df_recursos['Funcionario'].unique()
+        material_colors =  ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#5F6368', '#FF7043', '#9E9D24']
+        color_mapping = {name: material_colors[i % len(material_colors)] for i, name in enumerate(unique_names)}
+
         fig, ax = plt.subplots(figsize=(12, 6))
         bottom = pd.Series([0] * len(df_grouped_ano['Anno'].unique()), index=df_grouped_ano['Anno'].unique())
         for nombre, group in df_grouped_ano.groupby('Funcionario'):
-            bars = ax.bar(group['Anno'].astype(str), group['Horas'], label=nombre, bottom=bottom[group['Anno']].values)
+            bars = ax.bar(group['Anno'].astype(str), group['Horas'], label=nombre, bottom=bottom[group['Anno']].values, color=color_mapping[nombre])
             bottom[group['Anno']] += group['Horas'].values
 
             for bar in bars:
                 height = bar.get_height()
-                bar_center = bar.get_y() + height / 2
-                ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center),
-                            xytext=(0, 0), textcoords="offset points",
-                            ha='center', va='center', fontsize=10, color='white')
+                if height > 0:
+                    bar_center = bar.get_y() + height / 2
+                    ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center), xytext=(0, 0), textcoords="offset points", ha='center', va='center', fontsize=10, color='white')
 
         ax.set_title('Sumatoria de Horas por Año', fontsize=16, fontweight='bold')
         ax.set_xlabel('Año', fontsize=14)
@@ -104,38 +108,139 @@ def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
         ax.legend(title='Recurso')
         st.pyplot(fig)
 
-        st.write("### Sumatoria de horas por mes")
-        df_grouped_mes = df_recursos.groupby(['Funcionario', 'Mes'])['Horas'].sum().reset_index()
-        df_grouped_mes = ordenar_meses(df_grouped_mes)
+        if selected_year != 'Todos':
+            st.write("### Sumatoria de horas por mes")
+            df_grouped_mes = df_recursos.groupby(['Funcionario', 'Mes'])['Horas'].sum().reset_index()
+            df_grouped_mes = ordenar_meses(df_grouped_mes)
 
-        fig, ax = plt.subplots(figsize=(12, 6))
-        bottom = pd.Series([0] * len(df_grouped_mes['Mes'].unique()), index=df_grouped_mes['Mes'].unique())
-        for nombre, group in df_grouped_mes.groupby('Funcionario'):
-            bars = ax.bar(group['Mes'], group['Horas'], label=nombre, bottom=bottom[group['Mes']].values)
-            bottom[group['Mes']] += group['Horas'].values
+            fig, ax = plt.subplots(figsize=(12, 6))
+            bottom = pd.Series([0] * len(df_grouped_mes['Mes'].unique()), index=df_grouped_mes['Mes'].unique())
+            for nombre in unique_names:
+                group = df_grouped_mes[df_grouped_mes['Funcionario'] == nombre]
+                bars = ax.bar(group['Mes'], group['Horas'], label=nombre, bottom=bottom[group['Mes']].values, color=color_mapping.get(nombre, 'gray'))
+                bottom[group['Mes']] += group['Horas'].values
 
-            for bar in bars:
-                height = bar.get_height()
-                bar_center = bar.get_y() + height / 2
-                ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center),
-                            xytext=(0, 0), textcoords="offset points",
-                            ha='center', va='center', fontsize=10, color='white')
+                for bar in bars:
+                    height = bar.get_height()
+                    if height > 0:
+                        bar_center = bar.get_y() + height / 2
+                        ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center), xytext=(0, 0), textcoords="offset points", ha='center', va='center', fontsize=10, color='white')
+            ax.set_title('Sumatoria de Horas por Mes', fontsize=16, fontweight='bold')
+            ax.set_xlabel('Mes', fontsize=14)
+            ax.set_ylabel('Horas', fontsize=14)
+            ax.legend(title='Recurso')
+            plt.xticks(rotation=45)
+            st.pyplot(fig)
 
-        ax.set_title('Sumatoria de Horas por Mes', fontsize=16, fontweight='bold')
-        ax.set_xlabel('Mes', fontsize=14)
-        ax.set_ylabel('Horas', fontsize=14)
-        ax.legend(title='Recurso')
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
+            st.write("### Porcentaje de carga laboral mensual")
+            df_grouped_carga = df_grouped_mes.copy()
+            df_grouped_carga['Porcentaje'] = ((df_grouped_carga['Horas'] / 160) * 100).astype(int)
 
+            fig, ax = plt.subplots(figsize=(12, 6))
+            bottom = pd.Series([0] * len(df_grouped_carga['Mes'].unique()), index=df_grouped_carga['Mes'].unique())
+            for nombre in unique_names:
+                group = df_grouped_carga[df_grouped_carga['Funcionario'] == nombre]
+                if not group.empty:
+                    bars = ax.bar(group['Mes'], group['Porcentaje'], label=nombre, bottom=bottom[group['Mes']].values, color=color_mapping.get(nombre, 'gray'))
+                    bottom[group['Mes']] += group['Porcentaje'].values
+
+                    for bar, (_, row) in zip(bars, group.iterrows()):
+                        height = bar.get_height()
+                        if height > 0:
+                            bar_center = bar.get_y() + height / 2
+                            ax.annotate(f'{row["Porcentaje"]}%', xy=(bar.get_x() + bar.get_width() / 2, bar_center), xytext=(0, 0), textcoords="offset points", ha='center', va='center', fontsize=10, color='white')
+
+            ax.set_title('Porcentaje de Carga Laboral Mensual', fontsize=16, fontweight='bold')
+            ax.set_xlabel('Mes', fontsize=14)
+            ax.set_ylabel('Porcentaje (%)', fontsize=14)
+            ax.legend(title='Recurso')
+            plt.xticks(rotation=45)
+            st.pyplot(fig)
 
 def mostrar_grafico():
-    st.title("�헏️ Visualización de la Línea del Tiempo")
+    st.title("🿕️ Visualización de la Línea del Tiempo")
     st.write(f"🔄 Última actualización: {FECHA_ACTUALIZACION}")
 
     df = cargar_datos()
     if df is not None:
-        st.dataframe(df)
+        years = sorted(set(df['Year Start'].dropna().astype(int)).union(set(df['Year Finish'].dropna().astype(int))))
+        if 2025 not in years:
+            years.append(2025)
+        years = ['Todos'] + sorted(set(years))
+        selected_year = st.sidebar.selectbox("🿕️ Seleccione un año", years, index=0)
+
+        df_filtered = df[df['Outline Level'] == 1].copy()
+
+        if selected_year != 'Todos':
+            df_filtered = df_filtered[(df_filtered['Year Start'] == selected_year) | (df_filtered['Year Finish'] == selected_year)]
+
+        df_filtered = df_filtered.sort_values(by='Start', ascending=True)
+
+        selected_task = None
+        if selected_year != 'Todos':
+            task_names = ['Todas'] + df_filtered['Name'].unique().tolist()
+            selected_task = st.sidebar.selectbox("📋 Seleccione una tarea", task_names, index=0)
+            if selected_task != "Todas":
+                task_outline_level_1 = df_filtered[df_filtered['Name'] == selected_task]
+                if not task_outline_level_1.empty:
+                    task_start = task_outline_level_1.iloc[0]['Start']
+                    task_finish = task_outline_level_1.iloc[0]['Finish']
+
+                    df_filtered = df[
+                        (df['Outline Level'].isin([1, 2])) &
+                        (df['Start'] >= task_start) &
+                        (df['Finish'] <= task_finish)
+                    ]
+
+        st.write("### Línea del tiempo de los registros con Outline Level 1 y 2")
+        fig, ax = plt.subplots(figsize=(18, 10))
+        ax.set_facecolor('white')
+        df_filtered = df_filtered.reset_index(drop=True)
+        y_positions = range(len(df_filtered) - 1, -1, -1)
+
+        bars = ax.barh(y_positions, df_filtered['Finish'] - df_filtered['Start'], left=df_filtered['Start'], color='#0F9D58', height=0.6)
+
+        for bar, (_, row) in zip(bars, df_filtered.iterrows()):
+            start_text = row['Start'].strftime('%d/%m/%y') if pd.notnull(row['Start']) else ""
+            finish_text = row['Finish'].strftime('%d/%m/%y') if pd.notnull(row['Finish']) else ""
+            bar_center = bar.get_y() + bar.get_height() / 2
+
+            ax.text(row['Start'], bar_center, start_text, verticalalignment='center', horizontalalignment='right', fontsize=11, color='#4285F4')
+            ax.text(row['Finish'], bar_center, finish_text, verticalalignment='center', horizontalalignment='left', fontsize=11, color='#4285F4')
+            ax.text(row['Start'] + (row['Finish'] - row['Start']) / 2, bar_center + 0.3, row['Name'], verticalalignment='bottom', horizontalalignment='center', fontsize=11, fontweight='bold', color='black')
+
+        ax.set_xlabel("Fecha", fontsize=14, fontweight='bold')
+        ax.set_ylabel("", fontsize=14, fontweight='bold')
+        ax.set_title("Línea del tiempo de tareas nivel 1 y 2", fontsize=16, fontweight='bold')
+        ax.set_yticks(y_positions)
+        ax.set_yticklabels([])
+
+        if selected_year == 'Todos':
+            ax.xaxis.set_major_locator(mdates.YearLocator())
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+            ax.set_xlim(left=pd.Timestamp(year=2025, month=1, day=1))
+        else:
+            ax.xaxis.set_major_locator(mdates.MonthLocator())
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+
+            today = datetime.today()
+            if today.year == selected_year:
+                ax.axvline(today, color='red', linestyle='--', linewidth=2)
+
+        ax.grid(False)
+        plt.xticks(fontsize=14, fontweight='bold', color='black', rotation=0)
+
+        st.pyplot(fig)
+        buffer = io.BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight")
+        buffer.seek(0)
+        st.download_button(
+            label="👅 Descargar gráfico",
+            data=buffer,
+            file_name="grafico_linea_tiempo.png",
+            mime="image/png"
+        )
+
 
 
 def main():
@@ -163,10 +268,7 @@ def main():
                 anios.insert(0, 'Todos')
                 selected_year = st.selectbox("Seleccione un año del proyecto", anios)
 
-                if selected_year != 'Todos':
-                    meses = extraer_meses(df_recursos, selected_year)
-                    meses.insert(0, 'Todos')
-                    selected_month = st.selectbox("Seleccione un mes del proyecto", meses)
+
 
     if opcion == "Información del Proyecto":
         mostrar_informacion_proyecto()
@@ -178,3 +280,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
