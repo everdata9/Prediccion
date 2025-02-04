@@ -144,7 +144,7 @@ def mostrar_informacion_proyecto():
     """, unsafe_allow_html=True)
 
     # Última actualización
-    st.markdown("<div class='update-info'>📅 Última actualización: 2025-01-31</div>", unsafe_allow_html=True)
+    st.markdown("<div class='update-info'>📅 Última actualización: 04/02/2025</div>", unsafe_allow_html=True)
     st.write("")
     # Objetivo
     st.markdown("""
