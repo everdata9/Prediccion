@@ -12,7 +12,7 @@ import io  # Para la descarga del gráfico
 # locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
 
 # Variable de fecha de actualización
-FECHA_ACTUALIZACION = "2025-01-31"
+FECHA_ACTUALIZACION = "04-02-2025"
 
 # Rutas de los archivos Excel para uso global
 EXCEL_FILE_PATH = "20241221 Cronograma IT v3 - copia (1).xlsx"
