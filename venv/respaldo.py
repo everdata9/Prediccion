@@ -412,8 +412,52 @@ def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
             st.markdown("</div>", unsafe_allow_html=True)
 
 def mostrar_grafico():
-    st.title("🿕️ Visualización de la Línea del Tiempo")
-    st.write(f"🔄 Última actualización: {FECHA_ACTUALIZACION}")
+
+    st.markdown("""
+        <style>
+            .main {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+            .section {
+                background-color: #F5F5F5;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+                margin-bottom: 30px;
+            }
+            .section h2 {
+                color: #007A33;
+                font-size: 34px;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            .stSelectbox label {
+                color: #007A33;
+                font-weight: bold;
+            }
+            .download-btn .css-1aumxhk {
+                background-color: #D32F2F !important;
+                color: white !important;
+                font-weight: bold;
+                border-radius: 8px;
+                padding: 10px 20px;
+            }
+            .download-btn .css-1aumxhk:hover {
+                background-color: #B71C1C !important;
+                color: white !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Encabezado moderno
+    st.markdown("""
+        <div class='main'>
+            <div class='section'>
+                <h2>🗓️ Cronograma del Proyecto</h2>                
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
     df = cargar_datos()
     if df is not None:
@@ -446,7 +490,14 @@ def mostrar_grafico():
                         (df['Finish'] <= task_finish)
                     ]
 
-        st.write("### Línea del tiempo de los registros con Outline Level 1 y 2")
+        # Mostrar el título del Gantt según la selección de año
+        #st.markdown("<div class='section'>", unsafe_allow_html=True)
+        if selected_year == 'Todos':
+            st.markdown("### 📊Gantt de actividades para **todos los años**", unsafe_allow_html=True)
+        else:
+            st.markdown(f"### 📊 Gantt de actividades para el año **{selected_year}**", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
         fig, ax = plt.subplots(figsize=(18, 10))
         ax.set_facecolor('white')
         df_filtered = df_filtered.reset_index(drop=True)
@@ -465,7 +516,7 @@ def mostrar_grafico():
 
         ax.set_xlabel("Fecha", fontsize=14, fontweight='bold')
         ax.set_ylabel("", fontsize=14, fontweight='bold')
-        ax.set_title("Línea del tiempo de tareas nivel 1 y 2", fontsize=16, fontweight='bold')
+        ax.set_title(f"Gantt de actividades para el año {selected_year}", fontsize=16, fontweight='bold')
         ax.set_yticks(y_positions)
         ax.set_yticklabels([])
 
@@ -488,12 +539,16 @@ def mostrar_grafico():
         buffer = io.BytesIO()
         plt.savefig(buffer, format="png", bbox_inches="tight")
         buffer.seek(0)
+
+        # Botón de descarga con estilo moderno
+        st.markdown("<div class='download-btn'>", unsafe_allow_html=True)
         st.download_button(
-            label="👅 Descargar gráfico",
+            label="📁 Descargar gráfico",
             data=buffer,
             file_name="grafico_linea_tiempo.png",
             mime="image/png"
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 
@@ -501,8 +556,8 @@ def main():
     with st.sidebar:
         opcion = option_menu(
             "Menú",
-            ["Información del Proyecto", "Visualización de la Línea del Tiempo", "Recurso Humano"],
-            icons=["house", "bar-chart", "people"],
+            ["Ficha del Proyecto", "Cronograma", "Recurso Humano"],
+            icons=["house", "calendar-range", "people"],
             menu_icon="cast",
             default_index=0
         )
@@ -524,9 +579,9 @@ def main():
 
 
 
-    if opcion == "Información del Proyecto":
+    if opcion == "Ficha del Proyecto":
         mostrar_informacion_proyecto()
-    elif opcion == "Visualización de la Línea del Tiempo":
+    elif opcion == "Cronograma":
         mostrar_grafico()
     elif opcion == "Recurso Humano":
         mostrar_recurso_humano(selected_nombre, selected_year, selected_month)
