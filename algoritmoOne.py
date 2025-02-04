@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import matplotlib.dates as mdates
 from streamlit_option_menu import option_menu
+from PIL import Image
 import locale
 import io  # Para la descarga del gráfico
 
@@ -59,20 +60,259 @@ def ordenar_meses(df):
 
 
 def mostrar_informacion_proyecto():
-    st.title("📄 Información del Proyecto")
-    st.write("Este proyecto permite la visualización de una línea del tiempo en formato de barras, basado en un archivo Excel con fechas de inicio y fin de tareas.")
-    st.write("### Características principales:")
-    st.write("- Carga automática de un archivo Excel con información de tareas desde la carpeta del sistema.")
-    st.write("- Conversión de fechas y limpieza de datos.")
-    st.write("- Filtro de tareas por año de inicio o fin.")
-    st.write("- Visualización de tareas en formato de barras con etiquetas de nombre y fechas.")
-    st.write("- Interfaz interactiva con Streamlit.")
-    st.write(f"🔄 Última actualización: {FECHA_ACTUALIZACION}")
+    # Estilo global para un diseño uniforme y moderno
+    st.markdown("""
+        <style>
+            .main {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            .header-section {
+                background-color: #E8F5E9;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+                margin-bottom: 30px;
+                text-align: center;
+            }
+            .header-section h1 {
+                color: #007A33;
+                font-size: 40px;
+                margin-bottom: 5px;
+            }
+            .header-section p {
+                color: #555;
+                font-size: 16px;
+                margin: 0;
+                letter-spacing: 1px;
+            }
+            .section {
+                background-color: #F5F5F5;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+            .section h3 {
+                color: #007A33;
+                margin-bottom: 15px;
+            }
+            .update-info {
+                background-color: #E3F2FD;
+                padding: 10px;
+                border-radius: 8px;
+                color: #0D47A1;
+                font-weight: bold;
+                display: inline-block;
+            }
+            /* Estilo para la nueva visualización de Metodología */
+            .method-card {
+                display: flex;
+                align-items: center;
+                background-color: #E8F5E9;
+                padding: 15px 20px;
+                border-radius: 10px;
+                box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+                margin-bottom: 15px;
+                border-left: 5px solid #007A33;
+            }
+            .method-card:nth-child(even) {
+                background-color: #F1F8E9;
+            }
+            .method-icon {
+                font-size: 24px;
+                color: #007A33;
+                margin-right: 15px;
+            }
+            .method-text {
+                font-size: 18px;
+                color: #333;
+                font-weight: bold;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Contenedor principal
+    st.markdown('<div class="main">', unsafe_allow_html=True)
+
+    # Encabezado del Proyecto
+    st.markdown("""
+        <div class='header-section'>
+            <h1>🚍 Modernización Tecnológica de la<br>Intendencia de Transporte</h1>
+            <p>AUTORIDAD REGULADORA DE LOS SERVICIOS PÚBLICOS</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Última actualización
+    st.markdown("<div class='update-info'>📅 Última actualización: 2025-01-31</div>", unsafe_allow_html=True)
+    st.write("")
+    # Objetivo
+    st.markdown("""
+        <div class='section'>
+            <h3>🎯 Objetivo</h3>
+            <p style='text-align: justify;'>
+                Implementar soluciones tecnológicas modernas y eficientes que fortalezcan la capacidad de la Intendencia de Transporte para regular y supervisar los servicios públicos de transporte,
+                facilitando la gestión de datos, la autogestión de usuarios, el cálculo tarifario y la integración con sistemas estratégicos.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Metas
+    st.markdown("""
+        <div class='section'>
+            <h3>📌 Metas</h3>
+            <ul>
+                <li>Actualizar y desarrollar 40 ingresadores tecnológicos.</li>
+                <li>Implementar un sistema de autogestión de usuarios.</li>
+                <li>Optimizar el cálculo tarifario para el servicio de autobús.</li>
+                <li>Desarrollar un módulo de consultas para la base de datos SIR.</li>
+                <li>Integrar previsiones para la conexión con sistemas de pago electrónico.</li>
+                <li>Generar herramientas de análisis y datos abiertos.</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+
+            # Título de la sección del equipo
+    st.markdown("""
+        <h2 style='color:#007A33;'>👥 Equipo de Proyecto</h2>
+        <hr style='border:1px solid #007A33;'>
+    """, unsafe_allow_html=True)
+
+    # Definición del equipo
+    equipo = [
+        {"rol": "DTT PM/Analista", "nombre": "Ever Alfaro"},
+        {"rol": "DTT Analista", "nombre": "Eddie Leal"},
+        {"rol": "DTT Base de Datos", "nombre": "Roberto Campos"},
+        {"rol": "DTT Implementador", "nombre": "Gabriel Fuentes"},
+        {"rol": "DTT QA", "nombre": "Por Asignar"},
+        {"rol": "IT Dueño de Negocio", "nombre": "Sofía Arburola"}
+    ]
+
+    # Estilo para las tarjetas
+    st.markdown("""
+        <style>
+            .card {
+                background-color: #F5F5F5;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+                margin-bottom: 15px;
+            }
+            .card h4 {
+                margin: 0;
+                color: #007A33;
+            }
+            .card p {
+                margin: 5px 0 0;
+                color: #333;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Mostrar el equipo en dos columnas
+    col1, col2 = st.columns(2)
+
+    for index, miembro in enumerate(equipo):
+        with (col1 if index % 2 == 0 else col2):
+            st.markdown(f"""
+                <div class='card'>
+                    <h4>{miembro['rol']}</h4>
+                    <p><strong>{miembro['nombre']}</strong></p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.write("")
+    st.write("")
+    # Nueva visualización de la Metodología de Trabajo
+    st.markdown("""
+        <div class='section'>
+            <h3>🛠️ Metodología de Trabajo</h3>
+            <div class='method-card'>
+                <div class='method-icon'>📊</div>
+                <div class='method-text'>Análisis</div>
+            </div>
+            <div class='method-card'>
+                <div class='method-icon'>💻</div>
+                <div class='method-text'>Desarrollo</div>
+            </div>
+            <div class='method-card'>
+                <div class='method-icon'>🧪</div>
+                <div class='method-text'>QAT</div>
+            </div>
+            <div class='method-card'>
+                <div class='method-icon'>✅</div>
+                <div class='method-text'>UAT</div>
+            </div>
+            <div class='method-card'>
+                <div class='method-icon'>📄</div>
+                <div class='method-text'>Documentación</div>
+            </div>
+            <div class='method-card'>
+                <div class='method-icon'>🎓</div>
+                <div class='method-text'>Capacitación</div>
+            </div>
+            <div class='method-card'>
+                <div class='method-icon'>🚀</div>
+                <div class='method-text'>Implementación</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Cerrar el contenedor principal
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def mostrar_recurso_humano(selected_nombre, selected_year, selected_month): 
-    st.title("👥 Recurso Humano del Proyecto")
-    st.write(f"🔄 Última actualización: {FECHA_ACTUALIZACION}")
+def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
+    # Estilos modernos
+    st.markdown("""
+        <style>
+            .main {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            .section {
+                background-color: #F5F5F5;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+                margin-bottom: 30px;
+            }
+            .section h2 {
+                color: #007A33;
+                font-size: 34px;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            .update-info {
+                background-color: #E3F2FD;
+                padding: 10px;
+                border-radius: 8px;
+                color: #0D47A1;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .stSelectbox label {
+                color: #007A33;
+                font-weight: bold;
+            }
+            .stPlotlyChart, .stPyplot {
+                border-radius: 12px;
+                box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+                padding: 10px;
+                background-color: white;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Encabezado moderno
+    st.markdown("""
+        <div class='main'>
+            <div class='section'>
+                <h2>👥 Recurso Humano del Proyecto</h2>                
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
     df_recursos = cargar_recursos()
     if df_recursos is not None:
@@ -85,77 +325,91 @@ def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
         if selected_nombre != 'Todos':
             df_grouped_ano = df_grouped_ano[df_grouped_ano['Funcionario'] == selected_nombre]
 
-        # Definir paleta de colores consistente
+        # Paleta de colores moderna
         unique_names = df_recursos['Funcionario'].unique()
-        material_colors =  ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#5F6368', '#FF7043', '#9E9D24']
+        material_colors = ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#5F6368', '#FF7043', '#9E9D24']
         color_mapping = {name: material_colors[i % len(material_colors)] for i, name in enumerate(unique_names)}
 
+        # Gráfico de Horas por Año
+        st.markdown("<div class='section'><h3 style='text-align:center;'>📊 Sumatoria de Horas por Año</h3>", unsafe_allow_html=True)
         fig, ax = plt.subplots(figsize=(12, 6))
         bottom = pd.Series([0] * len(df_grouped_ano['Anno'].unique()), index=df_grouped_ano['Anno'].unique())
+        
         for nombre, group in df_grouped_ano.groupby('Funcionario'):
-            bars = ax.bar(group['Anno'].astype(str), group['Horas'], label=nombre, bottom=bottom[group['Anno']].values, color=color_mapping[nombre])
+            bars = ax.bar(group['Anno'].astype(str), group['Horas'], label=nombre, 
+                          bottom=bottom[group['Anno']].values, color=color_mapping[nombre])
             bottom[group['Anno']] += group['Horas'].values
 
             for bar in bars:
                 height = bar.get_height()
                 if height > 0:
                     bar_center = bar.get_y() + height / 2
-                    ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center), xytext=(0, 0), textcoords="offset points", ha='center', va='center', fontsize=10, color='white')
+                    ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center),
+                                ha='center', va='center', fontsize=10, color='white')
 
-        ax.set_title('Sumatoria de Horas por Año', fontsize=16, fontweight='bold')
         ax.set_xlabel('Año', fontsize=14)
         ax.set_ylabel('Horas', fontsize=14)
         ax.legend(title='Recurso')
         st.pyplot(fig)
+        st.markdown("</div>", unsafe_allow_html=True)
 
         if selected_year != 'Todos':
-            st.write("### Sumatoria de horas por mes")
+            # Gráfico de Horas por Mes
+            st.markdown("<div class='section'><h3 style='text-align:center;'>📈 Sumatoria de Horas por Mes</h3>", unsafe_allow_html=True)
             df_grouped_mes = df_recursos.groupby(['Funcionario', 'Mes'])['Horas'].sum().reset_index()
             df_grouped_mes = ordenar_meses(df_grouped_mes)
 
             fig, ax = plt.subplots(figsize=(12, 6))
             bottom = pd.Series([0] * len(df_grouped_mes['Mes'].unique()), index=df_grouped_mes['Mes'].unique())
+            
             for nombre in unique_names:
                 group = df_grouped_mes[df_grouped_mes['Funcionario'] == nombre]
-                bars = ax.bar(group['Mes'], group['Horas'], label=nombre, bottom=bottom[group['Mes']].values, color=color_mapping.get(nombre, 'gray'))
+                bars = ax.bar(group['Mes'], group['Horas'], label=nombre,
+                              bottom=bottom[group['Mes']].values, color=color_mapping.get(nombre, 'gray'))
                 bottom[group['Mes']] += group['Horas'].values
 
                 for bar in bars:
                     height = bar.get_height()
                     if height > 0:
                         bar_center = bar.get_y() + height / 2
-                        ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center), xytext=(0, 0), textcoords="offset points", ha='center', va='center', fontsize=10, color='white')
-            ax.set_title('Sumatoria de Horas por Mes', fontsize=16, fontweight='bold')
+                        ax.annotate(f'{int(height)}', xy=(bar.get_x() + bar.get_width() / 2, bar_center),
+                                    ha='center', va='center', fontsize=10, color='white')
+                        
             ax.set_xlabel('Mes', fontsize=14)
             ax.set_ylabel('Horas', fontsize=14)
             ax.legend(title='Recurso')
             plt.xticks(rotation=45)
             st.pyplot(fig)
+            st.markdown("</div>", unsafe_allow_html=True)
 
-            st.write("### Porcentaje de carga laboral mensual")
+            # Gráfico de Porcentaje de Carga Laboral Mensual
+            st.markdown("<div class='section'><h3 style='text-align:center;'>📌 Porcentaje de Carga Laboral Mensual</h3>", unsafe_allow_html=True)
             df_grouped_carga = df_grouped_mes.copy()
             df_grouped_carga['Porcentaje'] = ((df_grouped_carga['Horas'] / 160) * 100).astype(int)
 
             fig, ax = plt.subplots(figsize=(12, 6))
             bottom = pd.Series([0] * len(df_grouped_carga['Mes'].unique()), index=df_grouped_carga['Mes'].unique())
+            
             for nombre in unique_names:
                 group = df_grouped_carga[df_grouped_carga['Funcionario'] == nombre]
                 if not group.empty:
-                    bars = ax.bar(group['Mes'], group['Porcentaje'], label=nombre, bottom=bottom[group['Mes']].values, color=color_mapping.get(nombre, 'gray'))
+                    bars = ax.bar(group['Mes'], group['Porcentaje'], label=nombre,
+                                  bottom=bottom[group['Mes']].values, color=color_mapping.get(nombre, 'gray'))
                     bottom[group['Mes']] += group['Porcentaje'].values
 
                     for bar, (_, row) in zip(bars, group.iterrows()):
                         height = bar.get_height()
                         if height > 0:
                             bar_center = bar.get_y() + height / 2
-                            ax.annotate(f'{row["Porcentaje"]}%', xy=(bar.get_x() + bar.get_width() / 2, bar_center), xytext=(0, 0), textcoords="offset points", ha='center', va='center', fontsize=10, color='white')
+                            ax.annotate(f'{row["Porcentaje"]}%', xy=(bar.get_x() + bar.get_width() / 2, bar_center),
+                                        ha='center', va='center', fontsize=10, color='white')
 
-            ax.set_title('Porcentaje de Carga Laboral Mensual', fontsize=16, fontweight='bold')
             ax.set_xlabel('Mes', fontsize=14)
             ax.set_ylabel('Porcentaje (%)', fontsize=14)
             ax.legend(title='Recurso')
             plt.xticks(rotation=45)
             st.pyplot(fig)
+            st.markdown("</div>", unsafe_allow_html=True)
 
 def mostrar_grafico():
     st.title("🿕️ Visualización de la Línea del Tiempo")
