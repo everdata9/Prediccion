@@ -261,7 +261,6 @@ def mostrar_informacion_proyecto():
     # Cerrar el contenedor principal
     st.markdown("</div>", unsafe_allow_html=True)
 
-
 def mostrar_recurso_humano(selected_nombre, selected_year, selected_month):
     # Estilos modernos
     st.markdown("""
@@ -550,14 +549,96 @@ def mostrar_grafico():
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
+def responder_pregunta(pregunta, df_cronograma, df_recursos):
+    pregunta = pregunta.lower()
+    respuesta = "No pude encontrar la información solicitada. Intenta con otra pregunta."
+
+    # Lista de meses en español
+    meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
+             'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+    mes = None
+    anno = None
+    recurso = None
+
+    # Extraer mes y año de la pregunta
+    for i, m in enumerate(meses, 1):
+        if m in pregunta:
+            mes = i
+            break
+
+    for word in pregunta.split():
+        if word.isdigit() and len(word) == 4:
+            anno = int(word)
+            break
+
+    # Extraer el recurso (persona o equipo) de la pregunta
+    for nombre in df_recursos['Funcionario'].unique():
+        if nombre.lower() in pregunta:
+            recurso = nombre
+            break
+
+    # Asegurar que se filtra IT si está en la pregunta
+    if "it" in pregunta:
+        recurso = "IT"
+    
+    # Verificar que mes y año fueron detectados correctamente
+    if mes is None or anno is None:
+        return "Por favor, especifica un mes y un año válidos en la pregunta."
+
+    # Pregunta sobre cantidad de horas o días trabajados
+    if ("días" in pregunta or "dias" in pregunta or "horas" in pregunta):
+        if recurso:
+            df_recursos['Funcionario'] = df_recursos['Funcionario'].str.strip().str.lower()
+            df_recursos['Mes'] = df_recursos['Mes'].str.strip().str.lower()
+
+            df_filtrado = df_recursos[
+                (df_recursos['Funcionario'] == recurso.lower()) &
+                (df_recursos['Mes'] == meses[mes-1]) &
+                (df_recursos['Anno'] == anno)
+            ]
+
+            if not df_filtrado.empty:
+                total_horas = df_filtrado['Horas'].sum()
+                total_dias = total_horas // 8  # Suponiendo una jornada de 8 horas
+                
+                if "hora" in pregunta:
+                    respuesta = f"{recurso} ha trabajado {total_horas} horas en {meses[mes-1]} {anno}."
+                else:
+                    respuesta = f"{recurso} ha trabajado aproximadamente {total_dias} días en {meses[mes-1]} {anno}."
+            else:
+                respuesta = f"No hay registros de trabajo para {recurso} en {meses[mes-1]} {anno}."
+        else:
+            respuesta = "Por favor, especifica el nombre del funcionario para calcular el tiempo trabajado."
+        return respuesta
+
+    # Pregunta sobre tareas o actividades
+    if ("tareas" in pregunta or "actividades" in pregunta or ("trabaja" in pregunta and not ("horas" in pregunta or "días" in pregunta or "dias" in pregunta))):
+        df_tareas = df_cronograma[(df_cronograma['Start'].dt.month == mes) & (df_cronograma['Start'].dt.year == anno)]
+
+        if recurso and "Nombres de los recursos" in df_tareas.columns:
+            df_tareas = df_tareas[df_tareas['Nombres de los recursos'].str.contains(recurso, na=False, case=False)]
+
+        if not recurso:
+            recurso = "el equipo correspondiente"
+
+        if not df_tareas.empty:
+            tareas_list = df_tareas['Name'].tolist()
+            respuesta = f"Las tareas programadas en {meses[mes-1]} {anno} para {recurso} son:\n" + "\n".join([f"- {tarea}" for tarea in tareas_list])
+        else:
+            respuesta = f"No hay tareas programadas en {meses[mes-1]} {anno} para {recurso}."
+        return respuesta
+
+    return respuesta
+
 
 
 def main():
     with st.sidebar:
         opcion = option_menu(
             "Menú",
-            ["Ficha de Proyecto", "Cronograma", "Recurso Humano"],
-            icons=["house", "calendar-range", "people"],
+            ["Ficha de Proyecto", "Cronograma", "Recurso Humano","Asistente IA"],
+            icons=["house", "calendar-range", "people","robot"],
             menu_icon="cast",
             default_index=0
         )
@@ -585,8 +666,57 @@ def main():
         mostrar_grafico()
     elif opcion == "Recurso Humano":
         mostrar_recurso_humano(selected_nombre, selected_year, selected_month)
+    elif opcion == "Asistente IA":
+        st.markdown("""
+            <style>
+                .main {
+                    max-width: 750px;
+                    margin: 0 auto;
+                }
+                .section {
+                    background-color: #F5F5F5;
+                    padding: 25px;
+                    border-radius: 12px;
+                    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+                    margin-bottom: 30px;
+                }
+                .section h2 {
+                    color: #007A33;
+                    font-size: 34px;
+                    text-align: center;
+                    margin-bottom: 10px;
+                }
+                .input-box label {
+                    color: #007A33;
+                    font-weight: bold;
+                }
+                .response-box {
+                    background-color: #E8F5E9;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+                    margin-top: 20px;
+                    line-height: 1.6;
+                }
+            </style>
+        """, unsafe_allow_html=True)
 
+        st.markdown("""
+            <div class='main'>
+                <div class='section'>
+                    <h2>🤖 Asistente IA del Proyecto</h2>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
+        df_cronograma = cargar_datos()
+        df_recursos = cargar_recursos()
+
+        if df_cronograma is not None and df_recursos is not None:
+            pregunta = st.text_input("Haz una pregunta sobre el proyecto:")
+            if pregunta:
+                respuesta = responder_pregunta(pregunta, df_cronograma, df_recursos)
+                st.markdown(f"<div class='response-box'>{respuesta.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
 if __name__ == "__main__":
     main()
 
